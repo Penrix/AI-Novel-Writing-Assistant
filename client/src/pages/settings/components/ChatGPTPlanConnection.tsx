@@ -23,7 +23,7 @@ export default function ChatGPTPlanConnection() {
     const { data } = await apiClient.get<ApiResponse<ConnectionState>>("/chatgpt-plan/status");
     if (!data.data) return;
     setStatus(data.data);
-    if (data.data.canUsePlan) {
+    if (data.data.canUsePlan && !data.data.pending) {
       setAuthorizationUrl("");
       const listed = await apiClient.get<ApiResponse<OAuthModel[]>>("/chatgpt-plan/models");
       const available = listed.data.data ?? [];
@@ -119,7 +119,7 @@ export default function ChatGPTPlanConnection() {
           </label>
           <div className="flex flex-wrap gap-2">
             <Button onClick={() => void chooseModel()} disabled={busy || !selectedModel}>保存模型</Button>
-            <Button variant="secondary" onClick={() => void connect(true)} disabled={busy}>连接其他账号</Button>
+            <Button variant="secondary" onClick={() => void connect(true)} disabled={busy || status.pending}>连接其他账号</Button>
             <Button variant="outline" onClick={() => void disconnect()} disabled={busy}>退出连接</Button>
           </div>
         </div>

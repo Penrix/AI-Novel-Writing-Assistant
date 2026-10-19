@@ -97,9 +97,9 @@ export async function beginChatGPTSignIn(newAccount = false): Promise<{ authoriz
     if (!address || typeof address === "string") throw oauthError("无法建立本机授权回调。");
     const redirectUri = "http://127.0.0.1:" + address.port + CALLBACK_PATH;
     server.on("request", async (request, response) => {
+      const url = new URL(request.url ?? "/", redirectUri);
+      if (url.pathname !== CALLBACK_PATH) { response.writeHead(404).end(); return; }
       try {
-        const url = new URL(request.url ?? "/", redirectUri);
-        if (url.pathname !== CALLBACK_PATH) { response.writeHead(404).end(); return; }
         if (url.searchParams.get("state") !== state) throw oauthError("回调验证失败。");
         const error = url.searchParams.get("error");
         if (error) throw oauthError(error === "access_denied" ? "用户未授权。" : "授权被拒绝。");
@@ -276,7 +276,7 @@ export async function chatGPTSignOut(): Promise<{ revoked: boolean }> {
   const latest = await loadChatGPTCredentials();
   await saveChatGPTCredentials({
     ...latest,
-    activeClientId: null,
+    activeClientId: current?.clientId ?? null,
     registrations: latest.registrations.map((item) => item.clientId !== current?.clientId
       ? item
       : { clientId: item.clientId, subject: item.subject, email: item.email, scopes: [] }),

@@ -94,3 +94,34 @@ test("17 returns a proposal only after author approves the exact 16 take", () =>
   assert.equal(proposal.approvedContentRef, approvedRef);
   assert.equal(proposal.baseChapterRevision, "revision-42");
 });
+
+
+test("10 per person and 12 per section may repeat without advancing the whole stage", () => {
+  let session = fresh();
+  for (let i = 0; i < 4; i++) session = record(session); // at 10
+  assert.equal(expectedMusicScoreStep(session), "10");
+  session = recordMusicScoreEvent(session, {
+    step: "10", status: "READY", artifactRef: "char-a",
+    sourceRefs: ["A", "B-character-a"], unitId: "character-a",
+    continueSameStep: true, baseChapterRevision: "revision-42",
+  });
+  assert.equal(expectedMusicScoreStep(session), "10");
+  assert.throws(() => recordMusicScoreEvent(session, {
+    step: "10", status: "READY", artifactRef: "char-a-again",
+    sourceRefs: ["A"], unitId: "character-a",
+    continueSameStep: true, baseChapterRevision: "revision-42",
+  }), /不得重复消费/);
+  session = recordMusicScoreEvent(session, {
+    step: "10", status: "READY", artifactRef: "char-b",
+    sourceRefs: ["A", "B-character-b"], unitId: "character-b",
+    baseChapterRevision: "revision-42",
+  });
+  assert.equal(expectedMusicScoreStep(session), "11");
+  session = record(session); // at 12
+  session = recordMusicScoreEvent(session, {
+    step: "12", status: "READY", artifactRef: "beat-1",
+    sourceRefs: ["B-score"], unitId: "beat-1",
+    continueSameStep: true, baseChapterRevision: "revision-42",
+  });
+  assert.equal(expectedMusicScoreStep(session), "12");
+});

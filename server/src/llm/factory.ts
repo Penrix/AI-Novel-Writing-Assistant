@@ -2,6 +2,7 @@ import {attachLLMCacheRequestPolicy,resolveCacheCapability} from "../platform/ll
 import type { LLMProvider, ProviderAuthMode, ReasoningEffort } from "@ai-novel/shared/types/llm";
 import type { ModelRouteRequestProtocol } from "@ai-novel/shared/types/novel";
 import { ChatOpenAI } from "@langchain/openai";
+import { chatGPTCompatibleFetch } from "../platform/llm/siwc/compatibleFetch";
 import type { PromptInvocationMeta } from "../prompting/core/promptTypes";
 import { secretStore } from "../services/settings/secretStore";
 import { resolveModelTemperature } from "./capabilities";
@@ -408,6 +409,7 @@ export function createLLMFromResolvedOptions(resolved: ResolvedLLMClientOptions)
       __includeRawResponse: resolved.includeRawResponse,
       configuration: {
         baseURL: resolved.baseURL,
+        ...(resolved.provider === "chatgpt_plan" ? { fetch: chatGPTCompatibleFetch } : {}),
         defaultHeaders: buildOpenAICompatibleDefaultHeaders(resolved.authMode, resolved.apiKey),
       },
     });

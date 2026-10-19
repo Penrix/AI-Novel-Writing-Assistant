@@ -2,6 +2,7 @@ export const LLM_PROVIDERS = [
   "deepseek",
   "siliconflow",
   "openai",
+  "chatgpt_plan",
   "anthropic",
   "grok",
   "kimi",

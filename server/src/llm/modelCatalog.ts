@@ -1,4 +1,5 @@
 import type { LLMProvider, ProviderAuthMode } from "@ai-novel/shared/types/llm";
+import { chatGPTAvailableModels } from "../platform/llm/siwc/session";
 import {
   isBuiltInProvider,
   providerRequiresApiKey,
@@ -222,6 +223,9 @@ async function fetchProviderModels(
   customBaseURL?: string,
   authMode?: ProviderAuthMode,
 ): Promise<string[]> {
+  if (provider === "chatgpt_plan") {
+    return (await chatGPTAvailableModels()).map((model) => model.slug);
+  }
   const baseURL = resolveProviderBaseUrl(provider, customBaseURL, customBaseURL);
   if (!baseURL) {
     throw new Error("未配置可用的 API URL。");

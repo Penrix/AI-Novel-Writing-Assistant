@@ -2,6 +2,7 @@ import { app, BrowserWindow, clipboard, dialog, ipcMain, shell } from "electron"
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import {
   createDatabaseImportRelaunchArgs,
   createSanitizedRelaunchArgs,
@@ -427,6 +428,24 @@ async function showBootstrapFailureDialog(error: unknown): Promise<void> {
   }
 }
 
+function isTrustedChatGPTRenderer(source: string): boolean {
+  if (!source) return false;
+  try {
+    const actual = new URL(source);
+    if (app.isPackaged) {
+      const expected = pathToFileURL(resolveRendererIndexHtml());
+      return actual.protocol === "file:"
+        && actual.origin === expected.origin
+        && actual.pathname === expected.pathname;
+    }
+    return actual.protocol === "http:"
+      && (actual.hostname === "localhost" || actual.hostname === "127.0.0.1")
+      && actual.origin === new URL(resolveRendererDevUrl()).origin;
+  } catch {
+    return false;
+  }
+}
+
 function registerDesktopIpcHandlers(): void {
   ipcMain.handle("desktop:get-bootstrap-snapshot", () => desktopBootstrapStore.getSnapshot());
   ipcMain.handle("desktop:get-updater-snapshot", () => desktopUpdaterStore.getSnapshot());
@@ -441,8 +460,7 @@ function registerDesktopIpcHandlers(): void {
   });
   ipcMain.handle("desktop:chatgpt-plan", async (event, action: string, newAccount?: boolean) => {
     const source = event.senderFrame?.url ?? "";
-    const trustedRenderer = (app.isPackaged && source === "file://" + resolveRendererIndexHtml().replace(/\\/g, "/"))
-      || (!app.isPackaged && /^http:\/\/(?:localhost|127\.0\.0\.1):\d+\//.test(source));
+    const trustedRenderer = isTrustedChatGPTRenderer(source);
     if (!trustedRenderer || !chatgptPlanServerPort) throw new Error("仅允许本机小说工作台操作 ChatGPT 账号连接。");
     const operations: Record<string, { path: string; method: "GET" | "POST" }> = {
       status: { path: "/status", method: "GET" },
@@ -465,8 +483,7 @@ function registerDesktopIpcHandlers(): void {
   });
   ipcMain.handle("desktop:open-chatgpt-authorization", async (event, url: string) => {
     const source = event.senderFrame?.url ?? "";
-    const trustedRenderer = source.startsWith("file://")
-      || /^http:\/\/(?:localhost|127\.0\.0\.1):\d+\//.test(source);
+    const trustedRenderer = isTrustedChatGPTRenderer(source);
     if (!trustedRenderer || typeof url !== "string") throw new Error("授权页面来源无效。");
     const target = new URL(url);
     if (target.origin !== "https://auth.openai.com" || target.pathname !== "/api/accounts/authorize") {

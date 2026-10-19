@@ -3,6 +3,17 @@ import type { PromptSlotDef } from "../slots/slotTypes";
 export const ADVANCED_TEMPLATE_PROMPT_IDS = [
   "novel.chapter.writer",
   "novel.short_story.segment.write",
+  "thirdgen.music.07",
+  "thirdgen.music.08",
+  "thirdgen.music.09",
+  "thirdgen.music.10",
+  "thirdgen.music.11",
+  "thirdgen.music.12",
+  "thirdgen.music.13",
+  "thirdgen.music.14",
+  "thirdgen.music.15",
+  "thirdgen.music.16",
+  "thirdgen.music.17",
 ] as const;
 export const ADVANCED_TEMPLATE_PROMPT_ID = ADVANCED_TEMPLATE_PROMPT_IDS[0];
 export const ADVANCED_TEMPLATE_SCOPE = "novel";
@@ -33,6 +44,7 @@ export function supportsAdvancedPromptTemplate(promptId: string): boolean {
 }
 
 export function getRequiredTemplateContextGroups(promptId: string): string[] {
+  if (promptId.startsWith("thirdgen.music.")) return []; // Stage evidence is supplied as isolated input, not globally injected.
   return promptId === "novel.short_story.segment.write"
     ? [...SHORT_STORY_WRITER_REQUIRED_CONTEXT_GROUPS]
     : promptId === "novel.chapter.writer"

@@ -261,6 +261,17 @@ export async function resolveLLMClientOptions(
     resolvedRouteDegraded = route.routeDegraded;
   }
 
+  if (resolvedProvider === "chatgpt_plan") {
+    const host = (process.env.HOST ?? "").trim().toLowerCase();
+    const allowLan = (process.env.ALLOW_LAN ?? (
+      process.env.NODE_ENV === "production" ? "false" : "true"
+    )).trim().toLowerCase();
+    const lanEnabled = allowLan === "true" || allowLan === "1";
+    if (lanEnabled || host === "0.0.0.0" || host === "::" || host === "[::]") {
+      throw new Error("ChatGPT 套餐只可在绑定本机回环地址的工作台使用。请先关闭局域网监听。");
+    }
+  }
+
   const dbSecret = await resolveProviderSecret(resolvedProvider);
   const providerName = isBuiltInProvider(resolvedProvider)
     ? PROVIDERS[resolvedProvider].name

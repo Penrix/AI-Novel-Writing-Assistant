@@ -18,7 +18,7 @@ type TokenResponse = {
 type VerifiedIdentity = { subject: string; email: string };
 type Pending = { server: Server; timer: NodeJS.Timeout };
 let pending: Pending | null = null;
-let refreshTask: Promise<string> | null = null;
+const refreshTasks = new Map<string, Promise<string>>();
 
 function oauthError(message: string): Error {
   return new Error("ChatGPT 授权失败：" + message);
@@ -200,35 +200,40 @@ export async function getChatGPTAccessToken(): Promise<string> {
     throw oauthError("请先使用 ChatGPT 登录并授权套餐调用。");
   }
   if ((current.expiresAt ?? 0) > Date.now() + 60_000) return current.accessToken;
-  if (!refreshTask) {
-    refreshTask = (async () => {
-      const refreshed = await tokenRequest(new URLSearchParams({
-        grant_type: "refresh_token",
-        client_id: current.clientId,
-        refresh_token: current.refreshToken!,
-        resource: RESOURCE,
-      }));
-      const latest = await loadChatGPTCredentials();
-      const stillCurrent = latest.registrations.find((item) => item.clientId === current.clientId);
-      if (!stillCurrent || stillCurrent.refreshToken !== current.refreshToken) {
-        throw oauthError("刷新期间账号已切换，请重试。");
-      }
-      const next: ChatGPTRegistration = {
-        ...stillCurrent,
-        accessToken: refreshed.access_token,
-        refreshToken: refreshed.refresh_token ?? stillCurrent.refreshToken,
-        idToken: refreshed.id_token ?? stillCurrent.idToken,
-        expiresAt: Date.now() + refreshed.expires_in * 1_000,
-        scopes: (refreshed.scope ?? stillCurrent.scopes.join(" ")).split(/\s+/).filter(Boolean),
-      };
-      await saveChatGPTCredentials({
-        ...latest,
-        registrations: latest.registrations.map((item) => item.clientId === current.clientId ? next : item),
-      });
-      return refreshed.access_token;
-    })().finally(() => { refreshTask = null; });
+  const running = refreshTasks.get(current.clientId);
+  if (running) return running;
+  const refresh = (async () => {
+    const refreshed = await tokenRequest(new URLSearchParams({
+      grant_type: "refresh_token",
+      client_id: current.clientId,
+      refresh_token: current.refreshToken!,
+      resource: RESOURCE,
+    }));
+    const latest = await loadChatGPTCredentials();
+    const stillCurrent = latest.registrations.find((item) => item.clientId === current.clientId);
+    if (!stillCurrent || stillCurrent.refreshToken !== current.refreshToken) {
+      throw oauthError("授权凭据在刷新期间发生变化，请重新获取连接状态。");
+    }
+    const next: ChatGPTRegistration = {
+      ...stillCurrent,
+      accessToken: refreshed.access_token,
+      refreshToken: refreshed.refresh_token ?? stillCurrent.refreshToken,
+      idToken: refreshed.id_token ?? stillCurrent.idToken,
+      expiresAt: Date.now() + refreshed.expires_in * 1_000,
+      scopes: (refreshed.scope ?? stillCurrent.scopes.join(" ")).split(/\s+/).filter(Boolean),
+    };
+    await saveChatGPTCredentials({
+      ...latest,
+      registrations: latest.registrations.map((item) => item.clientId === current.clientId ? next : item),
+    });
+    return refreshed.access_token;
+  })();
+  refreshTasks.set(current.clientId, refresh);
+  try {
+    return await refresh;
+  } finally {
+    if (refreshTasks.get(current.clientId) === refresh) refreshTasks.delete(current.clientId);
   }
-  return refreshTask;
 }
 
 export async function chatGPTAvailableModels(): Promise<Array<{ slug: string; displayName: string }>> {

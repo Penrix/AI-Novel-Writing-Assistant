@@ -49,10 +49,12 @@ export function getMusicScorePromptAsset(id: MusicScorePromptId): PromptAsset<Mu
       advancedTemplate: { scope: "novel", requiredContextGroups: [] },
     },
     render: (input) => {
-      if (!input || typeof input.stageMaterial !== "string" || !input.stageMaterial.trim()) {
-        throw new Error("音乐缩谱" + id + "尚未收到本工序合法资料包。");
-      }
-      return [new SystemMessage(source), new HumanMessage(input.stageMaterial)];
+      // The workbench previews templates without actual chapter input.
+      // Live execution is gated by runMusicScoreStage, not this preview renderer.
+      const material = typeof input?.stageMaterial === "string" && input.stageMaterial.trim()
+        ? input.stageMaterial
+        : "【仅供提示词工作台预览：尚未提供真实A/B交接材料，禁止执行本工序】";
+      return [new SystemMessage(source), new HumanMessage(material)];
     },
   };
 }

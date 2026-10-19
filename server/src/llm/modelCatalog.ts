@@ -250,6 +250,15 @@ export async function getProviderModels(
   provider: LLMProvider,
   options: GetProviderModelsOptions = {},
 ): Promise<string[]> {
+  // ChatGPT model visibility belongs to the active OAuth account, not the
+  // endpoint URL. The ordinary provider cache would leak the old account's list.
+  if (provider === "chatgpt_plan") {
+    try {
+      return (await chatGPTAvailableModels()).map((model) => model.slug);
+    } catch {
+      return [];
+    }
+  }
   const fallback = getFallbackModels(provider, options);
   if (!options.forceRefresh) {
     const cached = getCachedModels(provider, options.baseURL);

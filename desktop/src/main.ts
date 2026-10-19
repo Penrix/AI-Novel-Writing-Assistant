@@ -437,6 +437,18 @@ function registerDesktopIpcHandlers(): void {
     updaterController?.quitAndInstall();
     return true;
   });
+  ipcMain.handle("desktop:open-chatgpt-authorization", async (event, url: string) => {
+    const source = event.senderFrame?.url ?? "";
+    const trustedRenderer = source.startsWith("file://")
+      || /^http:\/\/(?:localhost|127\.0\.0\.1):\d+\//.test(source);
+    if (!trustedRenderer || typeof url !== "string") throw new Error("授权页面来源无效。");
+    const target = new URL(url);
+    if (target.origin !== "https://auth.openai.com" || target.pathname !== "/api/accounts/authorize") {
+      throw new Error("只允许打开 OpenAI 官方授权页面。");
+    }
+    await shell.openExternal(target.toString());
+    return true;
+  });
   ipcMain.handle("desktop:open-logs-directory", () => shell.openPath(resolveDesktopLogsDir()));
   ipcMain.handle("desktop:copy-log-path", () => {
     const logPath = desktopBootstrapStore.getSnapshot().logFile;

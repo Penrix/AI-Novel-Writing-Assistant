@@ -85,6 +85,7 @@ interface Window {
     ) => (() => void) | void;
     checkForUpdates?: () => Promise<unknown>;
     quitAndInstall?: () => Promise<unknown>;
+    openChatGPTAuthorization?: (url: string) => Promise<boolean>;
     openLogsDirectory?: () => Promise<unknown>;
     copyLogPath?: () => Promise<string | undefined>;
     bundleLogs?: () => Promise<string | null>;

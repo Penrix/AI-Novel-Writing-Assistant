@@ -133,7 +133,18 @@ export default function ChatGPTPlanConnection() {
       )}
       {authorizationUrl ? (
         <p className="text-sm">
-          <a className="font-medium text-primary underline" href={authorizationUrl} target="_blank" rel="noopener noreferrer">
+          <a
+            className="font-medium text-primary underline"
+            href={authorizationUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(event) => {
+              if (window.__AI_NOVEL_DESKTOP__?.openChatGPTAuthorization) {
+                event.preventDefault();
+                void window.__AI_NOVEL_DESKTOP__.openChatGPTAuthorization(authorizationUrl);
+              }
+            }}
+          >
             打开 ChatGPT 官方授权页面
           </a>
           <span className="ml-2 text-muted-foreground">授权后返回此页。</span>

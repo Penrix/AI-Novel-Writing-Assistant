@@ -11,9 +11,9 @@ const LIFETIME_MS = 5 * 60_000;
 type TokenResponse = {
   access_token: string;
   refresh_token?: string;
-  id_token: string;
+  id_token?: string;
   expires_in: number;
-  scope: string;
+  scope?: string;
 };
 type VerifiedIdentity = { subject: string; email: string };
 type Pending = { server: Server; timer: NodeJS.Timeout };
@@ -33,7 +33,7 @@ async function tokenRequest(body: URLSearchParams): Promise<TokenResponse> {
   });
   if (!response.ok) throw oauthError("令牌交换或刷新失败（HTTP " + response.status + "）。");
   const json = await response.json() as Partial<TokenResponse>;
-  if (!json.access_token || !json.id_token || !json.scope) throw oauthError("服务器返回的凭据不完整。");
+  if (!json.access_token || typeof json.expires_in !== "number") throw oauthError("服务器返回的凭据不完整。");
   return json as TokenResponse;
 }
 
@@ -118,6 +118,7 @@ export async function beginChatGPTSignIn(newAccount = false): Promise<{ authoriz
           redirect_uri: redirectUri,
           resource: RESOURCE,
         }));
+        if (!token.id_token || !token.scope) throw oauthError("初次授权缺少身份令牌或授权范围。");
         const identity = await verifyIdentity(token.id_token, issuedId, nonce);
         if (current && current.subject !== identity.subject) throw oauthError("返回的账号与已选择账号不同。");
         const latest = await loadChatGPTCredentials();
@@ -218,7 +219,7 @@ export async function getChatGPTAccessToken(): Promise<string> {
         refreshToken: refreshed.refresh_token ?? stillCurrent.refreshToken,
         idToken: refreshed.id_token ?? stillCurrent.idToken,
         expiresAt: Date.now() + refreshed.expires_in * 1_000,
-        scopes: refreshed.scope.split(/\s+/).filter(Boolean),
+        scopes: (refreshed.scope ?? stillCurrent.scopes.join(" ")).split(/\s+/).filter(Boolean),
       };
       await saveChatGPTCredentials({
         ...latest,

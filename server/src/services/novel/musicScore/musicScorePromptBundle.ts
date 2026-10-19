@@ -29,13 +29,13 @@ export function promptIdForMusicStep(step: MusicScoreStep): MusicScorePromptId {
 /**
  * Load the actual 11 distinct prompt files supplied by the author.
  *
- * The v0.4 prompt bundle is not recreated from our own summaries. Neither
- * the generic writer prompt nor the older v0.2 draft may silently stand in.
- * This importer is not connected to the default chapter pipeline yet.
+ * The original draft files can be replaced explicitly and version checked. Neither
+ * the generic writer prompt nor a different draft version may silently stand in.
+ * For workbench edits use the native versioned PromptTemplateOverrideService; this\n * importer is only for explicit file-source mode, not default chapter production.
  */
 export async function loadMusicScorePromptSet(
   promptDirectory: string,
-  expectedVersion = "0.4.0-source-rebuilt",
+  expectedVersion = "0.3.0-draft",
 ): Promise<MusicScorePromptSet> {
   if (!promptDirectory.trim() || !expectedVersion.trim()) {
     throw new Error("音乐缩谱提示词目录和版本不能为空。");

@@ -105,10 +105,16 @@ export function recordMusicScoreEvent(
   if (input.baseChapterRevision !== session.baseChapterRevision) {
     throw new Error("本章正文版本已经变化；必须重新核对上下文，不得覆盖。");
   }
-  if (input.continueSameStep && (input.status !== "READY" || (step !== "10" && step !== "12"))) {
-    throw new Error("只有10人物分谱或12当前小节可以在READY后继续相同工序。");
+  if (input.continueSameStep && (input.status !== "READY" || (step !== "10" && step !== "12" && step !== "13"))) {
+    throw new Error("只有10人物分谱或12/13当前小节可以循环执行。");
   }
   if (input.continueSameStep) nonempty(input.unitId, "当前人物或小节标识");
+  if (step === "13" && input.status === "READY") {
+    const beatId = nonempty(input.unitId, "13本小节标识");
+    const hasCompiledBeat = session.events.some((event) =>
+      event.step === "12" && event.unitId === beatId && event.status === "READY");
+    if (!hasCompiledBeat) throw new Error("13需要先完成相同小节的12演员包，不得跳过局部编译。");
+  }
   if (input.unitId && session.events.some((item) => item.step === step && item.unitId === input.unitId && item.status === "READY")) {
     throw new Error("本工序已验收相同人物或小节，不得重复消费。");
   }
@@ -134,7 +140,11 @@ export function recordMusicScoreEvent(
     events: [...session.events, event],
   };
   if (input.status === "READY") {
-    if (!input.continueSameStep) next.nextStepIndex += 1;
+    if (step === "13" && input.continueSameStep) {
+      next.nextStepIndex = MUSIC_SCORE_STEPS.indexOf("12"); // next beat needs a fresh actor packet
+    } else if (!input.continueSameStep) {
+      next.nextStepIndex += 1;
+    }
     if (step === "16") next.state = "AWAITING_AUTHOR";
   } else if (input.status === "RETURN") {
     if (!input.returnTo) throw new Error("RETURN必须给出具体的上游步骤。");

@@ -13,7 +13,7 @@ async function withPromptDir(callback) {
     for (let id = 7; id <= 17; id++) {
       const key = String(id).padStart(2, "0");
       await fs.writeFile(path.join(root, key + "-prompt.md"),
-        "version: 0.4.0-source-rebuilt\n# Prompt " + key + "\n" + "实际正文参照A；".repeat(20));
+        "version: 0.3.0-draft\n# Prompt " + key + "\n" + "实际正文参照A；".repeat(20));
     }
     return await callback(root);
   } finally {
@@ -21,11 +21,11 @@ async function withPromptDir(callback) {
   }
 }
 
-test("imports eleven version-pinned v0.4 prompts, maps both 08 passes", async () => {
+test("imports eleven version-pinned v0.3 prompts, maps both 08 passes", async () => {
   await withPromptDir(async (root) => {
     const result = await loadMusicScorePromptSet(root);
     assert.equal(Object.keys(result).length, 11);
-    assert.equal(result["07"].version, "0.4.0-source-rebuilt");
+    assert.equal(result["07"].version, "0.3.0-draft");
     assert.equal(result["16"].sha256.length, 64);
     assert.equal(promptIdForMusicStep("08:first-listen"), "08");
     assert.equal(promptIdForMusicStep("08:score-listen"), "08");

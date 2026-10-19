@@ -66,5 +66,8 @@ export async function runMusicScoreStage(input: MusicScoreStageCall): Promise<{
   });
   const output = result.output.trim();
   if (!output) throw new Error("音乐缩谱模型没有交出阶段产物，禁止推进下一步。");
+  if (step === "13" && /^<<无法演奏[：:]/.test(output)) {
+    throw new Error("演员已报告无法演奏；不得把阻塞标记当作正文：" + output.slice(0, 300));
+  }
   return { step, output, promptId: asset.id, promptVersion: asset.version };
 }

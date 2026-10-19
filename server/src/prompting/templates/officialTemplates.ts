@@ -1,4 +1,6 @@
 import { createHash } from "node:crypto";
+import { MUSIC_SCORE_OFFICIAL_PROMPTS } from "../prompts/musicScore/musicScoreOfficialSources";
+import { MUSIC_SCORE_PROMPT_IDS } from "../prompts/musicScore/musicScore.prompts";
 import { chapterWriterPrompt } from "../prompts/novel/chapterWriter.prompts";
 import { shortStorySegmentWritePrompt } from "../prompts/shortStory/shortStory.prompts";
 import type {
@@ -162,6 +164,22 @@ const officialTemplates: Record<string, {
     slot: ["shortWriter.tone", "shortWriter.openingPressure", "shortWriter.paragraphing", "shortWriter.payoffDensity", "shortWriter.endingDelivery", "shortWriter.antiAiRules", "shortWriter.customConstraints"],
   },
 };
+
+for (const id of MUSIC_SCORE_PROMPT_IDS) {
+  const promptId = "thirdgen.music." + id;
+  officialTemplates[promptId] = {
+    template: {
+      kind: "chat",
+      messages: [
+        { role: "system", content: MUSIC_SCORE_OFFICIAL_PROMPTS[id] },
+        { role: "human", content: "{{input.stageMaterial}}" },
+      ],
+    },
+    version: "v0.3",
+    input: ["stageMaterial"],
+    slot: [],
+  };
+}
 
 export function getOfficialPromptTemplate(promptId: string): PromptTemplateJson | null {
   return officialTemplates[promptId]?.template ?? null;

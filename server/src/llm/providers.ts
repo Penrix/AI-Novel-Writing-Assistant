@@ -50,6 +50,14 @@ export const PROVIDERS: Record<BuiltinLLMProvider, ProviderConfig> = {
     envBaseURLKey: "OPENAI_BASE_URL",
     envModelKey: "OPENAI_MODEL",
   },
+  chatgpt_plan: {
+    name: "ChatGPT 套餐授权",
+    baseURL: "https://api.openai.com/v1",
+    defaultModel: "gpt-6.1-sol",
+    models: ["gpt-6.1-sol"],
+    envKey: "CHATGPT_PLAN_UNUSED_API_KEY",
+    requiresApiKey: false,
+  },
   anthropic: {
     name: "Anthropic",
     baseURL: "https://api.anthropic.com/v1",

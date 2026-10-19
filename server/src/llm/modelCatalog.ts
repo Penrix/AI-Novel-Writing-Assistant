@@ -1,4 +1,5 @@
 import type { LLMProvider, ProviderAuthMode } from "@ai-novel/shared/types/llm";
+import { chatGPTAvailableModels } from "../platform/llm/siwc/session";
 import {
   isBuiltInProvider,
   providerRequiresApiKey,
@@ -222,6 +223,9 @@ async function fetchProviderModels(
   customBaseURL?: string,
   authMode?: ProviderAuthMode,
 ): Promise<string[]> {
+  if (provider === "chatgpt_plan") {
+    return (await chatGPTAvailableModels()).map((model) => model.slug);
+  }
   const baseURL = resolveProviderBaseUrl(provider, customBaseURL, customBaseURL);
   if (!baseURL) {
     throw new Error("未配置可用的 API URL。");
@@ -246,6 +250,15 @@ export async function getProviderModels(
   provider: LLMProvider,
   options: GetProviderModelsOptions = {},
 ): Promise<string[]> {
+  // ChatGPT model visibility belongs to the active OAuth account, not the
+  // endpoint URL. The ordinary provider cache would leak the old account's list.
+  if (provider === "chatgpt_plan") {
+    try {
+      return (await chatGPTAvailableModels()).map((model) => model.slug);
+    } catch {
+      return [];
+    }
+  }
   const fallback = getFallbackModels(provider, options);
   if (!options.forceRefresh) {
     const cached = getCachedModels(provider, options.baseURL);

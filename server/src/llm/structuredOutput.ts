@@ -162,6 +162,9 @@ export function resolveStructuredOutputProfile(input: {
   const isDashScopeQwen = usesOfficialEndpoint("qwen", DASHSCOPE_HOST_PATTERN);
   const isModelScopeQwen = MODELSCOPE_HOST_PATTERN.test(host) || provider.includes("modelscope");
 
+  if (input.provider === "chatgpt_plan") {
+    return buildProfile({ family: "chatgpt_plan", preferredStructuredStrategy: "prompt_json" });
+  }
   if (input.requestProtocol === "anthropic") {
     return buildProfile({
       family: "anthropic",

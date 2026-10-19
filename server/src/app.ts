@@ -42,6 +42,7 @@ import promptWorkbenchRouter from "./routes/promptWorkbench";
 import ragRouter from "./routes/rag";
 import settingsAutoDirectorRouter from "./routes/settingsAutoDirector";
 import settingsRouter from "./routes/settings";
+import siwcRoutes from "./platform/llm/siwc/http/siwcRoutes";
 import styleEngineRouter from "./routes/styleEngine";
 import styleEngineExtractionRouter from "./routes/styleEngineExtraction";
 import storyModeRouter from "./routes/storyMode";
@@ -207,6 +208,7 @@ export function createApp() {
   app.use("/api/settings/auto-director", settingsAutoDirectorRouter);
   app.use("/api/auto-director/channel-callbacks", autoDirectorChannelCallbacksRouter);
   app.use("/api/settings", settingsRouter);
+  app.use("/api/chatgpt-plan", siwcRoutes);
   app.use("/api", onboardingRoutes);
   app.use("/api/astrology", astrologyRouter);
   if (parseEnvFlag(process.env.DIRECTOR_NEXT_ENABLED, true)) {

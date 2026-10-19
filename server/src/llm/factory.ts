@@ -2,6 +2,7 @@ import {attachLLMCacheRequestPolicy,resolveCacheCapability} from "../platform/ll
 import type { LLMProvider, ProviderAuthMode, ReasoningEffort } from "@ai-novel/shared/types/llm";
 import type { ModelRouteRequestProtocol } from "@ai-novel/shared/types/novel";
 import { ChatOpenAI } from "@langchain/openai";
+import { chatGPTCompatibleFetch } from "../platform/llm/siwc/compatibleFetch";
 import type { PromptInvocationMeta } from "../prompting/core/promptTypes";
 import { secretStore } from "../services/settings/secretStore";
 import { resolveModelTemperature } from "./capabilities";
@@ -260,6 +261,17 @@ export async function resolveLLMClientOptions(
     resolvedRouteDegraded = route.routeDegraded;
   }
 
+  if (resolvedProvider === "chatgpt_plan") {
+    const host = (process.env.HOST ?? "").trim().toLowerCase();
+    const allowLan = (process.env.ALLOW_LAN ?? (
+      process.env.NODE_ENV === "production" ? "false" : "true"
+    )).trim().toLowerCase();
+    const lanEnabled = allowLan === "true" || allowLan === "1";
+    if (lanEnabled || (host && !["localhost", "127.0.0.1", "::1", "[::1]"].includes(host))) {
+      throw new Error("ChatGPT 套餐只可在绑定本机回环地址的工作台使用。请先关闭局域网监听。");
+    }
+  }
+
   const dbSecret = await resolveProviderSecret(resolvedProvider);
   const providerName = isBuiltInProvider(resolvedProvider)
     ? PROVIDERS[resolvedProvider].name
@@ -408,6 +420,7 @@ export function createLLMFromResolvedOptions(resolved: ResolvedLLMClientOptions)
       __includeRawResponse: resolved.includeRawResponse,
       configuration: {
         baseURL: resolved.baseURL,
+        ...(resolved.provider === "chatgpt_plan" ? { fetch: chatGPTCompatibleFetch } : {}),
         defaultHeaders: buildOpenAICompatibleDefaultHeaders(resolved.authMode, resolved.apiKey),
       },
     });

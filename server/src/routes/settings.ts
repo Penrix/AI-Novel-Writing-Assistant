@@ -68,6 +68,7 @@ import {
 } from "../services/settings/worldGeneration/timeoutSettings";
 import { registerCustomProviderRoutes } from "./settings/customProviderRoutes";
 import { registerLLMSelectionRoutes } from "./settings/llmSelectionRoutes";
+import { chatGPTConnectionStatus } from "../platform/llm/siwc/session";
 
 const router = Router();
 const MAX_PROVIDER_CONCURRENCY_LIMIT = 100;
@@ -251,6 +252,7 @@ function buildBuiltInProviderStatus(
     requestIntervalMs?: number | null;
   } | undefined,
   imageModel: string | undefined,
+  chatgptPlanEnabled = false,
 ): BuiltInProviderStatus {
   const savedKey = normalizeOptionalText(item?.key);
   const envKey = getProviderEnvApiKey(provider);
@@ -266,7 +268,9 @@ function buildBuiltInProviderStatus(
   const currentModel = configuredModel ?? fallbackModels[0] ?? "";
   const models = filterHiddenModels(fallbackModels, hiddenModels, currentModel);
   const currentImageModel = imageModel ?? getDefaultImageModel(provider) ?? null;
-  const isConfigured = requiresApiKey ? Boolean(effectiveKey && currentModel) : Boolean(currentModel && currentBaseURL);
+  const isConfigured = provider === "chatgpt_plan"
+    ? Boolean(chatgptPlanEnabled && currentModel)
+    : requiresApiKey ? Boolean(effectiveKey && currentModel) : Boolean(currentModel && currentBaseURL);
   const supportsReasoningEffort = isDeepSeekThinkingModeProvider(provider, currentBaseURL, currentModel);
 
   return {
@@ -560,8 +564,9 @@ router.get("/api-keys", async (_req, res, next) => {
       ...keys.map((item) => item.provider),
     ]));
     const imageModelMap = await getProviderImageModelMap(allProviders);
+    const chatgptStatus = await chatGPTConnectionStatus();
     const builtInProviders = SUPPORTED_PROVIDERS.map((provider) =>
-      buildBuiltInProviderStatus(provider, keyMap.get(provider), imageModelMap.get(provider)),
+      buildBuiltInProviderStatus(provider, keyMap.get(provider), imageModelMap.get(provider), chatgptStatus.canUsePlan),
     );
     const customProviders = keys
       .filter((item) => !isBuiltInProvider(item.provider))

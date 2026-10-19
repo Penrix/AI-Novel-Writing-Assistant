@@ -297,9 +297,7 @@ export function compilePromptTemplate(input: {
   const contextByGroup = groupContextBlocks(input.context);
   const allowedContextGroups = new Set(input.allowedContextGroups);
   const slotKeys = new Set(input.slotDefs.map((slot) => slot.key));
-  const requiredGroups = input.requiredContextGroups?.length
-    ? input.requiredContextGroups
-    : [...WRITER_REQUIRED_CONTEXT_GROUPS];
+  const requiredGroups = input.requiredContextGroups ?? [...WRITER_REQUIRED_CONTEXT_GROUPS];
   const referencedContextGroups = new Set<string>();
   for (const token of collectMalformedTokens(input.template)) {
     appendDiagnostic(diagnostics, "unknownTokens", token);

@@ -9,6 +9,17 @@ export interface PromptAssetLoaderEntry {
 }
 
 export const promptAssetLoaderEntries: PromptAssetLoaderEntry[] = [
+  { key: "thirdgen.music.07@v0.3", load: () => require("../prompts/musicScore/musicScore.prompts").getMusicScorePromptAsset("07") as UnknownPromptAsset },
+  { key: "thirdgen.music.08@v0.3", load: () => require("../prompts/musicScore/musicScore.prompts").getMusicScorePromptAsset("08") as UnknownPromptAsset },
+  { key: "thirdgen.music.09@v0.3", load: () => require("../prompts/musicScore/musicScore.prompts").getMusicScorePromptAsset("09") as UnknownPromptAsset },
+  { key: "thirdgen.music.10@v0.3", load: () => require("../prompts/musicScore/musicScore.prompts").getMusicScorePromptAsset("10") as UnknownPromptAsset },
+  { key: "thirdgen.music.11@v0.3", load: () => require("../prompts/musicScore/musicScore.prompts").getMusicScorePromptAsset("11") as UnknownPromptAsset },
+  { key: "thirdgen.music.12@v0.3", load: () => require("../prompts/musicScore/musicScore.prompts").getMusicScorePromptAsset("12") as UnknownPromptAsset },
+  { key: "thirdgen.music.13@v0.3", load: () => require("../prompts/musicScore/musicScore.prompts").getMusicScorePromptAsset("13") as UnknownPromptAsset },
+  { key: "thirdgen.music.14@v0.3", load: () => require("../prompts/musicScore/musicScore.prompts").getMusicScorePromptAsset("14") as UnknownPromptAsset },
+  { key: "thirdgen.music.15@v0.3", load: () => require("../prompts/musicScore/musicScore.prompts").getMusicScorePromptAsset("15") as UnknownPromptAsset },
+  { key: "thirdgen.music.16@v0.3", load: () => require("../prompts/musicScore/musicScore.prompts").getMusicScorePromptAsset("16") as UnknownPromptAsset },
+  { key: "thirdgen.music.17@v0.3", load: () => require("../prompts/musicScore/musicScore.prompts").getMusicScorePromptAsset("17") as UnknownPromptAsset },
   {
     key: "novel.character.initial_schedule@v1",
     load: () => require("../prompts/novel/characterInitialSchedule.prompts").characterInitialSchedulePrompt as UnknownPromptAsset,

@@ -105,10 +105,13 @@ export function recordMusicScoreEvent(
   if (input.baseChapterRevision !== session.baseChapterRevision) {
     throw new Error("本章正文版本已经变化；必须重新核对上下文，不得覆盖。");
   }
-  if (input.continueSameStep && (input.status !== "READY" || (step !== "10" && step !== "12" && step !== "13"))) {
-    throw new Error("只有10人物分谱或12/13当前小节可以循环执行。");
+  if (input.continueSameStep && (input.status !== "READY" || (step !== "10" && step !== "13"))) {
+    throw new Error("只有10人物分谱可继续同工序，13演完一小节后可返回12编译下一小节。");
   }
   if (input.continueSameStep) nonempty(input.unitId, "当前人物或小节标识");
+  if (step === "12" && input.status === "READY") {
+    nonempty(input.unitId, "12当前小节标识");
+  }
   if (step === "13" && input.status === "READY") {
     const beatId = nonempty(input.unitId, "13本小节标识");
     const hasCompiledBeat = session.events.some((event) =>

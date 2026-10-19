@@ -122,9 +122,9 @@ test("10 per person and 12 per section may repeat without advancing the whole st
   session = recordMusicScoreEvent(session, {
     step: "12", status: "READY", artifactRef: "beat-1",
     sourceRefs: ["B-score"], unitId: "beat-1",
-    continueSameStep: true, baseChapterRevision: "revision-42",
+    baseChapterRevision: "revision-42",
   });
-  assert.equal(expectedMusicScoreStep(session), "12");
+  assert.equal(expectedMusicScoreStep(session), "13");
 });
 
 

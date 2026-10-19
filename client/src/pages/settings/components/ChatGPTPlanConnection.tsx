@@ -11,6 +11,22 @@ interface ConnectionState {
 }
 interface OAuthModel { slug: string; displayName: string }
 
+
+async function requestChatGPTPlan<T>(
+  action: "status" | "start" | "models" | "disconnect",
+  newAccount?: boolean,
+): Promise<T> {
+  if (window.__AI_NOVEL_DESKTOP__?.chatGPTPlan) {
+    return await window.__AI_NOVEL_DESKTOP__.chatGPTPlan(action, newAccount) as T;
+  }
+  const endpoint = "/chatgpt-plan/" + action;
+  const response = action === "start" || action === "disconnect"
+    ? await apiClient.post<ApiResponse<T>>(endpoint, action === "start" ? { newAccount: newAccount === true } : {})
+    : await apiClient.get<ApiResponse<T>>(endpoint);
+  if (!response.data.data) throw new Error("账号接口没有返回有效数据。");
+  return response.data.data;
+}
+
 export default function ChatGPTPlanConnection() {
   const [status, setStatus] = useState<ConnectionState | null>(null);
   const [authorizationUrl, setAuthorizationUrl] = useState("");
@@ -20,13 +36,11 @@ export default function ChatGPTPlanConnection() {
   const [message, setMessage] = useState("");
 
   const refresh = useCallback(async () => {
-    const { data } = await apiClient.get<ApiResponse<ConnectionState>>("/chatgpt-plan/status");
-    if (!data.data) return;
-    setStatus(data.data);
-    if (data.data.canUsePlan && !data.data.pending) {
+    const current = await requestChatGPTPlan<ConnectionState>("status");
+    setStatus(current);
+    if (current.canUsePlan && !current.pending) {
       setAuthorizationUrl("");
-      const listed = await apiClient.get<ApiResponse<OAuthModel[]>>("/chatgpt-plan/models");
-      const available = listed.data.data ?? [];
+      const available = await requestChatGPTPlan<OAuthModel[]>("models");
       setModels(available);
       setSelectedModel((prev) => available.some((model) => model.slug === prev)
         ? prev : (available[0]?.slug ?? ""));
@@ -49,10 +63,8 @@ export default function ChatGPTPlanConnection() {
     setBusy(true);
     setMessage("");
     try {
-      const { data } = await apiClient.post<ApiResponse<{ authorizationUrl: string }>>(
-        "/chatgpt-plan/start", { newAccount },
-      );
-      setAuthorizationUrl(data.data?.authorizationUrl ?? "");
+      const data = await requestChatGPTPlan<{ authorizationUrl: string }>("start", newAccount);
+      setAuthorizationUrl(data.authorizationUrl ?? "");
       await refresh();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "授权准备失败。");
@@ -82,11 +94,11 @@ export default function ChatGPTPlanConnection() {
     setBusy(true);
     setMessage("");
     try {
-      const { data } = await apiClient.post<ApiResponse<{ revoked: boolean }>>("/chatgpt-plan/disconnect");
+      const data = await requestChatGPTPlan<{ revoked: boolean }>("disconnect");
       setStatus({ connected: false, email: null, canUsePlan: false, pending: false });
       setModels([]);
       setAuthorizationUrl("");
-      setMessage(data.data?.revoked
+      setMessage(data.revoked
         ? "ChatGPT 已退出。"
         : "已清除本机登录信息，但远端撤销未确认；可前往 ChatGPT 设置管理应用权限。");
     } catch (error) {

@@ -47,6 +47,7 @@ contextBridge.exposeInMainWorld("__AI_NOVEL_DESKTOP__", {
   },
   checkForUpdates: () => ipcRenderer.invoke("desktop:check-for-updates"),
   quitAndInstall: () => ipcRenderer.invoke("desktop:quit-and-install"),
+  chatGPTPlan: (action: string, newAccount?: boolean) => ipcRenderer.invoke("desktop:chatgpt-plan", action, newAccount),
   openChatGPTAuthorization: (url: string) => ipcRenderer.invoke("desktop:open-chatgpt-authorization", url),
   openLogsDirectory: () => ipcRenderer.invoke("desktop:open-logs-directory"),
   copyLogPath: () => ipcRenderer.invoke("desktop:copy-log-path"),

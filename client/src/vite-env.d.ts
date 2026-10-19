@@ -85,6 +85,7 @@ interface Window {
     ) => (() => void) | void;
     checkForUpdates?: () => Promise<unknown>;
     quitAndInstall?: () => Promise<unknown>;
+    chatGPTPlan?: (action: "status" | "start" | "models" | "disconnect", newAccount?: boolean) => Promise<unknown>;
     openChatGPTAuthorization?: (url: string) => Promise<boolean>;
     openLogsDirectory?: () => Promise<unknown>;
     copyLogPath?: () => Promise<string | undefined>;

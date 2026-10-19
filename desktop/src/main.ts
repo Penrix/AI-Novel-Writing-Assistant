@@ -38,6 +38,7 @@ const UPDATER_CHANNEL = "desktop:updater-state-changed";
 let mainWindow: BrowserWindow | null = null;
 let splashWindow: BrowserWindow | null = null;
 let stopServer: (() => Promise<void>) | null = null;
+let chatgptPlanServerPort: number | null = null;
 let updaterController: DesktopUpdaterController | null = null;
 let rendererReady = false;
 let appShellReady = false;
@@ -382,6 +383,7 @@ async function bootstrapDesktopApp(): Promise<void> {
 
   const server = await startDesktopServer({ isPackaged: app.isPackaged, port });
   stopServer = server.stop;
+  chatgptPlanServerPort = server.port;
   serverHealthy = true;
   appendBootstrapStage("server-healthy", `Desktop server is healthy on 127.0.0.1:${server.port}.`);
   updateBootstrapProgress();
@@ -436,6 +438,30 @@ function registerDesktopIpcHandlers(): void {
   ipcMain.handle("desktop:quit-and-install", () => {
     updaterController?.quitAndInstall();
     return true;
+  });
+  ipcMain.handle("desktop:chatgpt-plan", async (event, action: string, newAccount?: boolean) => {
+    const source = event.senderFrame?.url ?? "";
+    const trustedRenderer = (app.isPackaged && source === "file://" + resolveRendererIndexHtml().replace(/\\/g, "/"))
+      || (!app.isPackaged && /^http:\/\/(?:localhost|127\.0\.0\.1):\d+\//.test(source));
+    if (!trustedRenderer || !chatgptPlanServerPort) throw new Error("仅允许本机小说工作台操作 ChatGPT 账号连接。");
+    const operations: Record<string, { path: string; method: "GET" | "POST" }> = {
+      status: { path: "/status", method: "GET" },
+      start: { path: "/start", method: "POST" },
+      models: { path: "/models", method: "GET" },
+      disconnect: { path: "/disconnect", method: "POST" },
+    };
+    const selected = operations[action];
+    if (!selected) throw new Error("未知 ChatGPT 账号操作。");
+    const response = await fetch("http://127.0.0.1:" + chatgptPlanServerPort + "/api/chatgpt-plan" + selected.path, {
+      method: selected.method,
+      ...(action === "start" ? {
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ newAccount: newAccount === true }),
+      } : {}),
+    });
+    const data = await response.json() as { success?: boolean; data?: unknown; error?: string };
+    if (!response.ok || !data.success) throw new Error(data.error ?? "ChatGPT 本机授权接口调用失败。");
+    return data.data;
   });
   ipcMain.handle("desktop:open-chatgpt-authorization", async (event, url: string) => {
     const source = event.senderFrame?.url ?? "";

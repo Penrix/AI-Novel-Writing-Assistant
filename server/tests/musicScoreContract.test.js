@@ -24,6 +24,7 @@ function record(session, status = "READY", returnTo) {
     artifactRef: "artifact-" + step + "-" + session.events.length,
     sourceRefs: ["book-a:chapter-9:paragraphs-4-12"],
     baseChapterRevision: "revision-42",
+    ...(step === "12" || step === "13" ? { unitId: "beat-1" } : {}),
     ...(returnTo ? { returnTo } : {}),
   });
 }
@@ -124,4 +125,39 @@ test("10 per person and 12 per section may repeat without advancing the whole st
     continueSameStep: true, baseChapterRevision: "revision-42",
   });
   assert.equal(expectedMusicScoreStep(session), "12");
+});
+
+
+test("12 then 13 can repeat per new beat; an actor cannot consume an uncompiled beat", () => {
+  let session = fresh();
+  for (let i = 0; i < 6; i++) session = record(session); // now 12
+  assert.equal(expectedMusicScoreStep(session), "12");
+  session = recordMusicScoreEvent(session, {
+    step: "12", status: "READY", artifactRef: "actor-packet-1",
+    sourceRefs: ["A", "scene-score"], unitId: "beat-1",
+    baseChapterRevision: "revision-42",
+  });
+  assert.equal(expectedMusicScoreStep(session), "13");
+  assert.throws(() => recordMusicScoreEvent(session, {
+    step: "13", status: "READY", artifactRef: "illegal-actor-output",
+    sourceRefs: ["A", "actor-packet"], unitId: "beat-2",
+    continueSameStep: true, baseChapterRevision: "revision-42",
+  }), /需要先完成相同小节/);
+  session = recordMusicScoreEvent(session, {
+    step: "13", status: "READY", artifactRef: "prose-beat-1",
+    sourceRefs: ["actor-packet-1"], unitId: "beat-1",
+    continueSameStep: true, baseChapterRevision: "revision-42",
+  });
+  assert.equal(expectedMusicScoreStep(session), "12");
+  session = recordMusicScoreEvent(session, {
+    step: "12", status: "READY", artifactRef: "actor-packet-2",
+    sourceRefs: ["A", "scene-score"], unitId: "beat-2",
+    baseChapterRevision: "revision-42",
+  });
+  session = recordMusicScoreEvent(session, {
+    step: "13", status: "READY", artifactRef: "prose-beat-2",
+    sourceRefs: ["actor-packet-2"], unitId: "beat-2",
+    baseChapterRevision: "revision-42",
+  });
+  assert.equal(expectedMusicScoreStep(session), "14");
 });

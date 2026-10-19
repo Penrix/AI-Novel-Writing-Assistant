@@ -267,7 +267,7 @@ export async function resolveLLMClientOptions(
       process.env.NODE_ENV === "production" ? "false" : "true"
     )).trim().toLowerCase();
     const lanEnabled = allowLan === "true" || allowLan === "1";
-    if (lanEnabled || host === "0.0.0.0" || host === "::" || host === "[::]") {
+    if (lanEnabled || (host && !["localhost", "127.0.0.1", "::1", "[::1]"].includes(host))) {
       throw new Error("ChatGPT 套餐只可在绑定本机回环地址的工作台使用。请先关闭局域网监听。");
     }
   }

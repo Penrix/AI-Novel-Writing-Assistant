@@ -36,6 +36,7 @@ export interface MusicScoreEvent {
   sourceRefs: string[];
   returnTo?: MusicScoreStep;
   note?: string;
+  unitId?: string; // participant for 10 / current section for 12
 }
 
 export interface MusicScoreApproval {
@@ -97,12 +98,22 @@ export function expectedMusicScoreStep(session: MusicScoreSession): MusicScoreSt
  */
 export function recordMusicScoreEvent(
   session: MusicScoreSession,
-  input: Omit<MusicScoreEvent, "attempt"> & { baseChapterRevision: string },
+  input: Omit<MusicScoreEvent, "attempt"> & { baseChapterRevision: string; continueSameStep?: boolean },
 ): MusicScoreSession {
   const step = expectedMusicScoreStep(session);
   if (input.step !== step) throw new Error("音乐缩谱步骤次序错误，当前应为 " + step);
   if (input.baseChapterRevision !== session.baseChapterRevision) {
     throw new Error("本章正文版本已经变化；必须重新核对上下文，不得覆盖。");
+  }
+  if (input.continueSameStep && (input.status !== "READY" || (step !== "10" && step !== "12"))) {
+    throw new Error("只有10人物分谱或12当前小节可以在READY后继续相同工序。");
+  }
+  if (input.continueSameStep) nonempty(input.unitId, "当前人物或小节标识");
+  if (input.unitId && session.events.some((item) => item.step === step && item.unitId === input.unitId && item.status === "READY")) {
+    throw new Error("本工序已验收相同人物或小节，不得重复消费。");
+  }
+  if (input.status !== "RETURN" && input.returnTo) {
+    throw new Error("只有RETURN可以指定上游目标。");
   }
   nonempty(input.artifactRef, "阶段完整产物引用");
   if (!Array.isArray(input.sourceRefs) || input.sourceRefs.length === 0) {
@@ -116,13 +127,14 @@ export function recordMusicScoreEvent(
     sourceRefs: [...input.sourceRefs],
     ...(input.returnTo ? { returnTo: input.returnTo } : {}),
     ...(input.note ? { note: input.note } : {}),
+    ...(input.unitId ? { unitId: input.unitId } : {}),
   };
   const next: MusicScoreSession = {
     ...session,
     events: [...session.events, event],
   };
   if (input.status === "READY") {
-    next.nextStepIndex += 1;
+    if (!input.continueSameStep) next.nextStepIndex += 1;
     if (step === "16") next.state = "AWAITING_AUTHOR";
   } else if (input.status === "RETURN") {
     if (!input.returnTo) throw new Error("RETURN必须给出具体的上游步骤。");

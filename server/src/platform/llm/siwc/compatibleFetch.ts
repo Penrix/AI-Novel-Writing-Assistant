@@ -153,7 +153,7 @@ export const chatGPTCompatibleFetch: typeof fetch = async (input, init) => {
 
   let completed = false;
   let content = "";
-  let usage: StreamEvent["response"]["usage"] | undefined;
+  let usage: NonNullable<StreamEvent["response"]>["usage"] | undefined;
   for await (const event of responseEvents(upstream)) {
     if (event.type === "response.output_text.delta") content += event.delta ?? "";
     else if (event.type === "response.completed") {

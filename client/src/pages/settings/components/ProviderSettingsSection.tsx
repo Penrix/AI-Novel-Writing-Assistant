@@ -9,6 +9,7 @@ import { AppDialogContent, Dialog } from "@/components/ui/dialog";
 import { AUTO_DIRECTOR_MOBILE_CLASSES } from "@/mobile/autoDirector";
 import { cn } from "@/lib/utils";
 import ProviderStatusCard, { type ProviderCardViewModel } from "./ProviderStatusCard";
+import ChatGPTPlanConnection from "./ChatGPTPlanConnection";
 
 export default function ProviderSettingsSection(props: {
   embedded?: boolean;
@@ -74,7 +75,7 @@ export default function ProviderSettingsSection(props: {
     () => viewModels.filter(({ provider }) => provider.isConfigured && provider.isActive),
     [viewModels],
   );
-  const addableBuiltIns = providers.filter((provider) => provider.kind === "builtin" && (!provider.isConfigured || !provider.isActive));
+  const addableBuiltIns = providers.filter((provider) => provider.kind === "builtin" && provider.provider !== "chatgpt_plan" && (!provider.isConfigured || !provider.isActive));
 
   return (
     <Card
@@ -106,6 +107,7 @@ export default function ProviderSettingsSection(props: {
         </div>
       </CardHeader>
       <CardContent className={cn("grid min-w-0 gap-4 pt-5 md:grid-cols-2", embedded && "px-0 pb-0")}>
+        <ChatGPTPlanConnection />
         {visibleViewModels.map((item) => (
           <ProviderStatusCard
             key={item.provider.provider}

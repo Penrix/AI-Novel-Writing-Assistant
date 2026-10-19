@@ -47,6 +47,17 @@ const SUPPORTED_PROMPT_ADDENDUM_ID_SET = new Set<string>(SUPPORTED_PROMPT_ADDEND
 
 const PROMPT_ADDENDUM_DESCRIPTIONS: Record<string, string> = {
   "novel.chapter.writer": "根据章节任务、角色状态、世界规则和风格约束生成章节正文。",
+  "thirdgen.music.07": "在已规划章节剧情约束下，将A参考拍链绑定到B的当前现实，形成B短谱。",
+  "thirdgen.music.08": "对B短谱或场景总谱进行模拟试听和差异定位。",
+  "thirdgen.music.09": "将B短谱配成各声部按时间进入的场景总谱。",
+  "thirdgen.music.10": "只按人物可知可做范围编写其局部分谱。",
+  "thirdgen.music.11": "排练多个现实人物的合法合奏与提示音。",
+  "thirdgen.music.12": "把总谱局部编译成隔离演员可用的小节任务包。",
+  "thirdgen.music.13": "只读当前演员包与已验收接缝，生成纯正文。",
+  "thirdgen.music.14": "只修正没有权限或不合谱的具体正文演奏。",
+  "thirdgen.music.15": "基于真实正文分轨审查并路由问题至正确责任工序。",
+  "thirdgen.music.16": "平衡已存在的合法正文轨道，不重新创作剧情。",
+  "thirdgen.music.17": "记录作者验收结果，提出受控状态/Pointer写回事务。",
   "audit.chapter.full": "完整检查章节质量，输出结构化问题、评分和修复建议。",
   "audit.chapter.light": "快速检查章节是否适合继续推进，识别明显风险。",
   "novel.review.repair": "根据审校问题和上下文，对整章进行最小必要修复。",
